@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('nightly-simulator-build') {
             steps {
-                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/7.5_env_setup.sh &&\
+                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/6.5_env_setup.sh &&\
                 source `pwd`/setup_environment &&\
                 make -j'
             }
@@ -28,7 +28,7 @@ pipeline {
                     git checkout purdue-cluster && \
                     git pull && \
                     ln -s /home/tgrogers-raid/a/common/data_dirs benchmarks/'
-                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/7.5_env_setup.sh &&\
+                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/6.5_env_setup.sh &&\
                     source `pwd`/setup_environment &&\
                     cd gpgpu-sim_simulations && \
                     source ./benchmarks/src/setup_environment && \
@@ -38,7 +38,7 @@ pipeline {
         }
         stage('nightly-2B-insn-run'){
             steps {
-                    sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/7.5_env_setup.sh &&\
+                    sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/6.5_env_setup.sh &&\
                     source `pwd`/setup_environment &&\
                     ./gpgpu-sim_simulations/util/job_launching/run_simulations.py -B `cat ./gpgpu-sim_simulations/util/job_launching/apps/all-apps.list` -C GTX480-2B,GTX480-PTXPLUS-2B,GTX1080Ti-2B -N nightly-$$ && \
                     PLOTDIR="jenkins/${JOB_NAME}/${BUILD_NUMBER}/getstats" && ssh tgrogers@dynamo.ecn.purdue.edu mkdir -p /home/dynamo/a/tgrogers/website/gpgpu-sim-plots/$PLOTDIR && \
@@ -48,10 +48,10 @@ pipeline {
         }
         stage('nightly-correlate'){
             steps {
-                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/7.5_env_setup.sh &&\
+                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/6.5_env_setup.sh &&\
                     source `pwd`/setup_environment &&\
                     PLOTDIR="jenkins/${JOB_NAME}" &&\
-                    ./gpgpu-sim_simulations/util/plotting/correlate_and_publish.sh TITANX_P102-2B,TITANX_P102-L1ON-2B,P100_HBM-2B $PLOTDIR ${BUILD_NUMBER}'
+                    ./gpgpu-sim_simulations/util/plotting/correlate_and_publish.sh GTX480-2B,GTX480-PTXPLUS-2B,GTX1080Ti-2B $PLOTDIR ${BUILD_NUMBER}'
             }
         }
     }
