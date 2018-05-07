@@ -47,7 +47,6 @@ pipeline {
                     make -i -j -C ./benchmarks/src/ all && \
                     make -C ./benchmarks/src data'
             }
-            }
         }
         stage('nightly-2B-insn-run'){
             steps {
