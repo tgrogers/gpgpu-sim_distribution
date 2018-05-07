@@ -50,7 +50,7 @@ pipeline {
         }
         stage('nightly-2B-insn-run'){
             steps {
-                parallel "nightly-4.2" {
+                parallel "nightly-4.2" : {
                     sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
                     source `pwd`/setup_environment &&\
                     ./gpgpu-sim_simulations/util/job_launching/run_simulations.py -B `cat ./gpgpu-sim_simulations/util/job_launching/apps/all-apps.list` -C GTX480-2B,GTX480-PTXPLUS-2B,GTX1080Ti-2B,GTX1080Ti-PTXPLUS-2B -N nightly-$$ && \
@@ -67,20 +67,21 @@ pipeline {
                 }
             }
         }
-        stage('nightly-correlate'){
+        stage('nightly-correlate-4.2'){
             steps {
-                parallel "4.2-correlate" : {
                     sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
                         source `pwd`/setup_environment &&\
                         PLOTDIR="jenkins/${JOB_NAME}" &&\
                         ./gpgpu-sim_simulations/util/plotting/correlate_and_publish.sh GTX480-2B,GTX480-PTXPLUS-2B,GTX1080Ti-2B,GTX1080Ti-PTXPLUS-2B $PLOTDIR ${BUILD_NUMBER}'
-                }, "9.1-correlate" : {
+            }
+        }
+        stage('nightly-correlate-9.1'){
+            steps {
                     sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/9.1_env_setup.sh &&\
                         source `pwd`/setup_environment &&\
                         PLOTDIR="jenkins/${JOB_NAME}" &&\
                         ./gpgpu-sim_simulations/util/plotting/correlate_and_publish.sh GTX480-2B,GTX1080Ti-2B $PLOTDIR ${BUILD_NUMBER}'
                 }
-            }
         }
     }
     post {
