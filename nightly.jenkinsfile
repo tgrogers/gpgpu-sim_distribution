@@ -15,9 +15,15 @@ pipeline {
     stages {
         stage('nightly-simulator-build') {
             steps {
-                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
-                source `pwd`/setup_environment &&\
-                make -j'
+                parallel "4.2": {
+                    sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
+                    source `pwd`/setup_environment &&\
+                    make -j'
+                }, "9.1" : {
+                    sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/9.1_env_setup.sh &&\
+                    source `pwd`/setup_environment &&\
+                    make -j'
+                }
             }
         }
         stage('nightly-simulations-build'){
@@ -32,26 +38,49 @@ pipeline {
                     source `pwd`/setup_environment &&\
                     cd gpgpu-sim_simulations && \
                     source ./benchmarks/src/setup_environment && \
+                    make -j -i -C ./benchmarks/src all && \
+                    make -C ./benchmarks/src data'
+                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/9.1_env_setup.sh &&\
+                    source `pwd`/setup_environment &&\
+                    cd gpgpu-sim_simulations && \
+                    source ./benchmarks/src/setup_environment && \
                     make -i -j -C ./benchmarks/src/ all && \
                     make -C ./benchmarks/src data'
+            }
             }
         }
         stage('nightly-2B-insn-run'){
             steps {
+                parallel "nightly-4.2" {
                     sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
                     source `pwd`/setup_environment &&\
                     ./gpgpu-sim_simulations/util/job_launching/run_simulations.py -B `cat ./gpgpu-sim_simulations/util/job_launching/apps/all-apps.list` -C GTX480-2B,GTX480-PTXPLUS-2B,GTX1080Ti-2B,GTX1080Ti-PTXPLUS-2B -N nightly-$$ && \
                     PLOTDIR="jenkins/${JOB_NAME}/${BUILD_NUMBER}/getstats" && ssh tgrogers@dynamo.ecn.purdue.edu mkdir -p /home/dynamo/a/tgrogers/website/gpgpu-sim-plots/$PLOTDIR && \
                     ./gpgpu-sim_simulations/util/job_launching/monitor_func_test.py -I -S 1800 -v  -s stats-$$.csv -N nightly-$$ && \
                     ./gpgpu-sim_simulations/util/plotting/plot-get-stats.py -c stats-$$.csv -p tgrogers@dynamo.ecn.purdue.edu:~/website/gpgpu-sim-plots/$PLOTDIR -w https://engineering.purdue.edu/tgrogers/gpgpu-sim-plots/$PLOTDIR -n $PLOTDIR'
+                }, "nightly-9.1": {
+                    sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/9.1_env_setup.sh &&\
+                    source `pwd`/setup_environment &&\
+                    ./gpgpu-sim_simulations/util/job_launching/run_simulations.py -B `cat ./gpgpu-sim_simulations/util/job_launching/apps/all-apps.list` -C GTX480-2B,GTX1080Ti-2B -N nightly-$$ && \
+                    PLOTDIR="jenkins/${JOB_NAME}/${BUILD_NUMBER}/getstats" && ssh tgrogers@dynamo.ecn.purdue.edu mkdir -p /home/dynamo/a/tgrogers/website/gpgpu-sim-plots/$PLOTDIR && \
+                    ./gpgpu-sim_simulations/util/job_launching/monitor_func_test.py -I -S 1800 -v  -s stats-$$.csv -N nightly-$$ && \
+                    ./gpgpu-sim_simulations/util/plotting/plot-get-stats.py -c stats-$$.csv -p tgrogers@dynamo.ecn.purdue.edu:~/website/gpgpu-sim-plots/$PLOTDIR -w https://engineering.purdue.edu/tgrogers/gpgpu-sim-plots/$PLOTDIR -n $PLOTDIR'
+                }
             }
         }
         stage('nightly-correlate'){
             steps {
-                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
-                    source `pwd`/setup_environment &&\
-                    PLOTDIR="jenkins/${JOB_NAME}" &&\
-                    ./gpgpu-sim_simulations/util/plotting/correlate_and_publish.sh GTX480-2B,GTX480-PTXPLUS-2B,GTX1080Ti-2B $PLOTDIR ${BUILD_NUMBER}'
+                parallel "4.2-correlate" : {
+                    sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
+                        source `pwd`/setup_environment &&\
+                        PLOTDIR="jenkins/${JOB_NAME}" &&\
+                        ./gpgpu-sim_simulations/util/plotting/correlate_and_publish.sh GTX480-2B,GTX480-PTXPLUS-2B,GTX1080Ti-2B,GTX1080Ti-PTXPLUS-2B $PLOTDIR ${BUILD_NUMBER}'
+                }, "9.1-correlate" : {
+                    sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/9.1_env_setup.sh &&\
+                        source `pwd`/setup_environment &&\
+                        PLOTDIR="jenkins/${JOB_NAME}" &&\
+                        ./gpgpu-sim_simulations/util/plotting/correlate_and_publish.sh GTX480-2B,GTX1080Ti-2B $PLOTDIR ${BUILD_NUMBER}'
+                }
             }
         }
     }
